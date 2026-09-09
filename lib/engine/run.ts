@@ -68,7 +68,11 @@ export async function runOne(runId: string, sse: RunSse, deps: RunDeps = default
       brief: null,
       created_at: new Date(now()).toISOString(),
     };
-    const { error: msgErr } = await db.from("messages").insert(envelope);
+    // The `messages` table has no `to` column — `to` only exists on the wire
+    // envelope (AgentOutput). Strip it before insert; keep the full envelope
+    // (with `to`) for the SSE payload.
+    const { to: _to, ...messageRow } = envelope;
+    const { error: msgErr } = await db.from("messages").insert(messageRow);
     if (msgErr) throw new Error(msgErr.message);
     sse.send("message", envelope);
 
