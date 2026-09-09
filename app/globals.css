@@ -1,26 +1,213 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* ---- Brand ramp (indigo) ---- */
+  --brand-50:  oklch(97% 0.015 264);
+  --brand-100: oklch(93% 0.03  264);
+  --brand-300: oklch(80% 0.09  264);
+  --brand-500: oklch(58% 0.16  264);   /* primary CTA */
+  --brand-600: oklch(50% 0.18  264);   /* primary CTA hover/active */
+  --brand-700: oklch(42% 0.17  264);
+  --brand-900: oklch(24% 0.11  264);   /* dark-mode surface base */
+
+  /* ---- Accent ramp (amber) ---- */
+  --amber-100: oklch(94% 0.05  85);
+  --amber-400: oklch(80% 0.14  80);
+  --amber-500: oklch(74% 0.16  75);    /* accent CTA, "Share" */
+  --amber-700: oklch(52% 0.14  70);
+
+  /* ---- Neutral surface ramp ---- */
+  --neutral-0:   oklch(100% 0     0);
+  --neutral-50:  oklch(98%  0.003 264);
+  --neutral-100: oklch(95%  0.005 264);
+  --neutral-200: oklch(90%  0.006 264);
+  --neutral-400: oklch(70%  0.008 264);
+  --neutral-600: oklch(48%  0.01  264);
+  --neutral-800: oklch(28%  0.012 264);
+  --neutral-950: oklch(15%  0.014 264);
+
+  /* ---- Surface & text (light mode default) ---- */
+  --bg:            var(--neutral-50);
+  --surface:       var(--neutral-0);
+  --surface-raised:var(--neutral-0);
+  --border:        var(--neutral-200);
+  --text:          var(--neutral-950);
+  --text-muted:    var(--neutral-600);
+
+  /* ---- The four desks (role identity) ---- */
+  --role-pm:         oklch(52% 0.18 264);   /* indigo — brand primary, PM owns the framing */
+  --role-researcher: oklch(55% 0.12 195);   /* teal */
+  --role-designer:   oklch(72% 0.15 75);    /* amber — brand accent, Designer owns the promise */
+  --role-developer:  oklch(48% 0.15 322);   /* plum */
+
+  /* on-role text: always neutral-0 on role-pm/researcher/developer, neutral-950 on role-designer (amber is light) */
+
+  /* ---- The five acts (message color, never used alone — always paired with an icon + label) ---- */
+  --act-propose:   oklch(55% 0.06 255);     /* quiet slate-indigo: a position on the table */
+  --act-question:  oklch(68% 0.14 95);      /* gold: asks something, needs an answer */
+  --act-objection: oklch(56% 0.21 27);      /* high-chroma red — deliberately the loudest token in the system */
+  --act-agree:     oklch(64% 0.15 148);     /* green: accepts */
+  --act-done:      oklch(55% 0.015 264);    /* neutral: nothing more to add */
+
+  /* ---- Semantic state ---- */
+  --state-success: var(--act-agree);
+  --state-warning: var(--amber-500);
+  --state-danger:  var(--act-objection);
+  --state-info:    var(--brand-500);
+
+  /* ---- Elevation (single shadow system, restrained) ---- */
+  --shadow-sm: 0 1px 2px oklch(15% 0.02 264 / 0.06);
+  --shadow-md: 0 4px 12px oklch(15% 0.02 264 / 0.08);
+  --shadow-lg: 0 12px 32px oklch(15% 0.02 264 / 0.12);
+
+  --focus-ring: 0 0 0 3px oklch(58% 0.16 264 / 0.45);
+
+  /* ---- Typography: fluid type scale (Design.md §2) ---- */
+  --text-xs:   clamp(0.75rem, 0.72rem + 0.1vw, 0.8125rem);
+  --text-sm:   clamp(0.8125rem, 0.79rem + 0.1vw, 0.875rem);
+  --text-base: clamp(0.9375rem, 0.9rem + 0.15vw, 1rem);
+  --text-lg:   clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
+  --text-xl:   clamp(1.25rem, 1.15rem + 0.4vw, 1.5rem);
+  --text-2xl:  clamp(1.625rem, 1.4rem + 0.9vw, 2.125rem);   /* idea-box prompt, route H1 */
+  --text-3xl:  clamp(2rem, 1.6rem + 1.6vw, 3rem);           /* "/" hero headline only */
+
+  --leading-tight: 1.2;    /* headings */
+  --leading-normal: 1.5;   /* body, artifact prose */
+  --leading-relaxed: 1.65; /* transcript message bodies — dense, needs air */
+
+  /* ---- Spacing & radius grid (Design.md §2) ---- */
+  --space-1: 0.25rem;  --space-2: 0.5rem;  --space-3: 0.75rem; --space-4: 1rem;
+  --space-5: 1.25rem;  --space-6: 1.5rem;  --space-8: 2rem;    --space-12: 3rem;
+  --space-16: 4rem;
+
+  --gutter: clamp(1rem, 4vw, 2.5rem);   /* page-edge padding — 16px @375, 24px @768, 40px @1440 */
+
+  --radius-sm: 8px;    /* chips, pills-adjacent controls */
+  --radius-md: 12px;   /* buttons, transcript rows */
+  --radius-lg: 20px;   /* desk cards, artifact cards */
+  --radius-full: 999px;/* status pills, avatars, act chips */
+
+  /* ---- Motion easings (Design.md §4) ---- */
+  --ease-out-expo:  cubic-bezier(0.16, 1, 0.3, 1);        /* entrances: desk state change, card mount */
+  --ease-in-out:    cubic-bezier(0.65, 0, 0.35, 1);       /* cross-fades: status pill text swap */
+  --ease-shake:     cubic-bezier(0.36, 0.07, 0.19, 0.97); /* objection shake only */
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
+/*
+ * Dark override: Design.md §2 specifies the surface/text swap verbatim and notes
+ * role/act tokens "raise lightness ~6-8% each in dark mode to hold contrast — see
+ * tokens-dark.css in implementation" without giving exact numbers. The reference
+ * implementation values below (task-5 brief) are used as that tokens-dark.css.
+ */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not([data-theme="light"]) {
+    --bg: var(--neutral-950);
+    --surface: var(--neutral-800);
+    --surface-raised: oklch(32% 0.013 264);
+    --border: oklch(38% 0.012 264);
+    --text: var(--neutral-50);
+    --text-muted: var(--neutral-400);
+    /* dark lift: +7% L on every role and act token (Design.md §2 note) */
+    --role-pm: oklch(59% 0.18 264);
+    --role-researcher: oklch(62% 0.12 195);
+    --role-designer: oklch(79% 0.15 75);
+    --role-developer: oklch(55% 0.15 322);
+    --act-propose: oklch(62% 0.06 255);
+    --act-question: oklch(75% 0.14 95);
+    --act-objection: oklch(63% 0.21 27);
+    --act-agree: oklch(71% 0.15 148);
+    --act-done: oklch(62% 0.015 264);
   }
 }
 
+/* Explicit dark toggle (repeats the same block verbatim so a manual toggle wins over OS setting) */
+:root[data-theme="dark"] {
+  --bg: var(--neutral-950);
+  --surface: var(--neutral-800);
+  --surface-raised: oklch(32% 0.013 264);
+  --border: oklch(38% 0.012 264);
+  --text: var(--neutral-50);
+  --text-muted: var(--neutral-400);
+  --role-pm: oklch(59% 0.18 264);
+  --role-researcher: oklch(62% 0.12 195);
+  --role-designer: oklch(79% 0.15 75);
+  --role-developer: oklch(55% 0.15 322);
+  --act-propose: oklch(62% 0.06 255);
+  --act-question: oklch(75% 0.14 95);
+  --act-objection: oklch(63% 0.21 27);
+  --act-agree: oklch(71% 0.15 148);
+  --act-done: oklch(62% 0.015 264);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-300: var(--brand-300);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+  --color-brand-900: var(--brand-900);
+
+  --color-amber-100: var(--amber-100);
+  --color-amber-400: var(--amber-400);
+  --color-amber-500: var(--amber-500);
+  --color-amber-700: var(--amber-700);
+
+  --color-role-pm: var(--role-pm);
+  --color-role-researcher: var(--role-researcher);
+  --color-role-designer: var(--role-designer);
+  --color-role-developer: var(--role-developer);
+
+  --color-act-propose: var(--act-propose);
+  --color-act-question: var(--act-question);
+  --color-act-objection: var(--act-objection);
+  --color-act-agree: var(--act-agree);
+  --color-act-done: var(--act-done);
+
+  --color-state-success: var(--state-success);
+  --color-state-warning: var(--state-warning);
+  --color-state-danger: var(--state-danger);
+  --color-state-info: var(--state-info);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-full: var(--radius-full);
+
+  --font-manrope: var(--font-manrope);
+  --font-inter: var(--font-inter);
+  --font-plex-mono: var(--font-plex-mono);
+}
+
+html {
+  color-scheme: light dark;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+}
+
+h1, h2, h3, .display {
+  font-family: var(--font-manrope), system-ui, sans-serif;
+  line-height: var(--leading-tight);
+}
+
+code, .mono {
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
