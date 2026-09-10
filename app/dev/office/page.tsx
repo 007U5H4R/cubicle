@@ -14,38 +14,47 @@ const EVENTS = fixture as RunStreamEvent[];
  * event so every desk state is reachable on demand, plus two synthetic failure injections (the
  * happy-path fixture never fails) to exhibit the `failed` treatments. Verification tool, not
  * production UI — kept functional, not polished.
+ *
+ * `applyEvent`/`reset` are store mutations (side effects) and must only run in a handler/effect
+ * body, never inside a `setState` updater — React runs updaters during render, so a mutation there
+ * causes a "Cannot update a component while rendering a different component" violation (the store's
+ * other subscriber, RunStatusPill, would update mid-render). `idxRef` tracks the current index for
+ * handlers to read synchronously (including the Play interval, so it never goes stale); `setIndex`
+ * only ever mirrors it for display.
  */
 export default function DevOfficePage() {
   const snap = useRunStore();
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const idxRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
+  function advance() {
+    if (idxRef.current >= EVENTS.length) return;
+    applyEvent(EVENTS[idxRef.current]);
+    idxRef.current += 1;
+    setIndex(idxRef.current);
+  }
+
   function step() {
-    setIndex((i) => {
-      if (i >= EVENTS.length) return i;
-      applyEvent(EVENTS[i]);
-      return i + 1;
-    });
+    advance();
   }
 
   function handleReset() {
     setPlaying(false);
     reset();
+    idxRef.current = 0;
     setIndex(0);
   }
 
   useEffect(() => {
     if (!playing) return;
     timerRef.current = setInterval(() => {
-      setIndex((i) => {
-        if (i >= EVENTS.length) {
-          setPlaying(false);
-          return i;
-        }
-        applyEvent(EVENTS[i]);
-        return i + 1;
-      });
+      if (idxRef.current >= EVENTS.length) {
+        setPlaying(false);
+        return;
+      }
+      advance();
     }, 1000);
     return () => clearInterval(timerRef.current);
   }, [playing]);
@@ -65,6 +74,7 @@ export default function DevOfficePage() {
   function injectPhase1Failure() {
     setPlaying(false);
     reset();
+    idxRef.current = 0;
     setIndex(0);
     applyEvent({ run_id: "run-001", seq: 1, type: "run.status", payload: { status: "running", phase: "debate", thinking: "pm" } });
     applyEvent({
