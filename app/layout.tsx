@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Header } from "@/components/shell/Header";
+import { RunStatusPill } from "@/components/shell/RunStatusPill";
 import { manrope, inter, plexMono } from "@/lib/fonts";
 import { ensureSession } from "@/lib/session-server";
 import "./globals.css";
@@ -37,7 +38,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       className={`${manrope.variable} ${inter.variable} ${plexMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <Header />
+        <Header status={<RunStatusPill />} />
         {children}
       </body>
     </html>

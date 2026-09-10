@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "gateway:check": "tsx scripts/gateway-check.ts",
     "smoke": "tsx scripts/smoke.ts",
-    "fixture:record": "tsx scripts/fixture-record.ts"
+    "fixture:record": "tsx scripts/fixture-record.ts",
+    "gen:office-fixture": "tsx --conditions=react-server scripts/gen-office-fixture.ts"
   },
   "dependencies": {
     "@google/genai": "^2.21.0",

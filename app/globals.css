@@ -211,3 +211,70 @@ code, .mono {
   outline: none;
   box-shadow: var(--focus-ring);
 }
+
+/* ---- TKT-12 Dispatch B — desk state motion (Design.md §3.6/§4, CSS-only) ---- */
+
+@keyframes desk-thinking-glow {
+  0% { opacity: 0.25; transform: scale(0.98); }
+  100% { opacity: 0.55; transform: scale(1.02); }
+}
+
+.desk-thinking-glow {
+  animation: desk-thinking-glow 1.4s ease-in-out infinite alternate;
+}
+
+@keyframes desk-waiting-ring {
+  0% { opacity: 0.45; }
+  100% { opacity: 0.9; }
+}
+
+.desk-waiting-ring {
+  animation: desk-waiting-ring 2.2s ease-in-out infinite alternate;
+}
+
+@keyframes desk-done-settle {
+  0% { border-left-color: var(--state-success); }
+  100% { border-left-color: var(--border); }
+}
+
+.desk-done-settle {
+  animation: desk-done-settle 800ms var(--ease-out-expo) forwards;
+}
+
+@keyframes desk-heading-tick-in {
+  0% { opacity: 0; transform: scale(0); }
+  60% { opacity: 1; transform: scale(1.15); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.desk-heading-tick-in {
+  animation: desk-heading-tick-in 220ms var(--ease-out-expo) both;
+}
+
+.desk-pill-crossfade {
+  transition: opacity 160ms var(--ease-in-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .desk-thinking-glow {
+    animation: none;
+    opacity: 0.5;
+    transform: none;
+  }
+
+  .desk-waiting-ring {
+    animation: none;
+    opacity: 0.5;
+  }
+
+  .desk-done-settle {
+    animation: none;
+    border-left-color: var(--border);
+  }
+
+  .desk-heading-tick-in {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
