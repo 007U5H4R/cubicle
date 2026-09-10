@@ -5,9 +5,8 @@ import { supabaseSink, track, type EventSink } from "@/lib/events";
 import { createGateway, type Gateway } from "@/lib/gateway";
 import { realTransport } from "@/lib/gateway/transport";
 import { serviceClient } from "@/lib/supabase/server";
-import { ROLE_PREFIX } from "@/lib/prompts/roles";
-import { agentOutputJsonSchema, agentOutputSchema, type Envelope } from "./envelope";
 import { costCents } from "./cost";
+import { runDebate, type DebateCfg } from "./debate";
 
 /** Structural subset of createSse()'s return that run.ts needs — sse.ts (TSK-04.1) satisfies this. */
 export interface RunSse {
@@ -32,13 +31,20 @@ export function defaultDeps(): RunDeps {
   };
 }
 
-function userTurn(idea: string): string {
-  return `IDEA: ${idea}\nTRANSCRIPT: (none yet)\nBRIEF: Open the discussion: frame the problem, the user, and the value, and name one assumption you are unsure of.`;
+/** Debate caps pulled from config — separated so runOne stays injectable in tests (which pass an
+ * explicit cfg and never touch process env via config()). */
+export function debateCfg(): DebateCfg {
+  const c = config();
+  return { DEBATE_MSG_CAP: c.DEBATE_MSG_CAP, DEBATE_WALL_CAP_S: c.DEBATE_WALL_CAP_S, RUN_TOKEN_CAP: c.RUN_TOKEN_CAP };
 }
 
-/** The M-001 tracer bullet: one PM call, persisted, streamed over SSE. */
-export async function runOne(runId: string, sse: RunSse, deps: RunDeps = defaultDeps()): Promise<void> {
-  const { db, gateway, sink, now } = deps;
+/**
+ * Runs one queued run: load it, mark it running, drive the §5 debate loop (delegated to
+ * runDebate), then mark it complete with wall/tokens/cost. On any failure the run is marked failed
+ * and exactly one run_failed event + one run.error SSE are emitted; the SSE stream is always closed.
+ */
+export async function runOne(runId: string, sse: RunSse, deps: RunDeps = defaultDeps(), cfg: DebateCfg = debateCfg()): Promise<void> {
+  const { db, sink, now } = deps;
   const startedAt = now();
   let anonSessionId: string | null = null;
   try {
@@ -49,42 +55,24 @@ export async function runOne(runId: string, sse: RunSse, deps: RunDeps = default
 
     const { error: startErr } = await db.from("runs").update({ status: "running", started_at: new Date(startedAt).toISOString() }).eq("id", runId);
     if (startErr) throw new Error(startErr.message);
-    sse.send("run.status", { status: "running", phase: "debate", thinking: "pm" });
 
-    const { data: output, usage } = await gateway.chat("agent", ROLE_PREFIX.pm, userTurn(idea), agentOutputSchema, agentOutputJsonSchema);
+    // The debate phase streams its own run.status/message (and steer) events and emits
+    // debate_completed. anon_session_id never rides on a message row — it stays with the run/event.
+    const outcome = await runDebate({ runId, idea, anonSessionId, deps, sse, cfg, startedAt });
 
-    const envelope: Envelope = {
-      id: crypto.randomUUID(),
-      run_id: runId,
-      seq: 1,
-      from_role: "pm",
-      to: output.to,
-      to_role: output.to,
-      act: output.act,
-      subject: output.subject,
-      body: output.body,
-      reply_to: null,
-      hops: 0,
-      brief: null,
-      created_at: new Date(now()).toISOString(),
-    };
-    // The `messages` table has no `to` column — `to` only exists on the wire
-    // envelope (AgentOutput). Strip it before insert; keep the full envelope
-    // (with `to`) for the SSE payload.
-    const { to: _to, ...messageRow } = envelope;
-    const { error: msgErr } = await db.from("messages").insert(messageRow);
-    if (msgErr) throw new Error(msgErr.message);
-    sse.send("message", envelope);
+    // TODO(task-7): insert the deliver phase here — grounded competitor scan + artifact pack —
+    // between debate_completed and run completion. Until then the run completes after the debate.
 
     const finishedAt = now();
     const wallS = Math.round((finishedAt - startedAt) / 1000);
-    const costCentsValue = costCents(usage);
+    const { input: tokensIn, output: tokensOut } = outcome.usage;
+    const costCentsValue = costCents(outcome.usage);
     const { error: doneErr } = await db
       .from("runs")
-      .update({ status: "complete", finished_at: new Date(finishedAt).toISOString(), tokens_in: usage.input, tokens_out: usage.output, cost_cents: costCentsValue })
+      .update({ status: "complete", finished_at: new Date(finishedAt).toISOString(), stop_reason: outcome.stop_reason, tokens_in: tokensIn, tokens_out: tokensOut, cost_cents: costCentsValue })
       .eq("id", runId);
     if (doneErr) throw new Error(doneErr.message);
-    sse.send("run.done", { status: "complete", wall_s: wallS, tokens: usage.input + usage.output, cost_cents: costCentsValue });
+    sse.send("run.done", { status: "complete", wall_s: wallS, tokens: tokensIn + tokensOut, cost_cents: costCentsValue });
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     await db.from("runs").update({ status: "failed", error: message }).eq("id", runId);
