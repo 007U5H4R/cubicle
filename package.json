@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "gateway:check": "tsx scripts/gateway-check.ts",
-    "smoke": "tsx scripts/smoke.ts"
+    "smoke": "tsx scripts/smoke.ts",
+    "fixture:record": "tsx scripts/fixture-record.ts"
   },
   "dependencies": {
     "@google/genai": "^2.21.0",
