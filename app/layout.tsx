@@ -6,7 +6,9 @@ import "./globals.css";
 
 const TITLE = "Cubicle — Your first team fits in a cubicle";
 const DESCRIPTION =
-  "Pitch an idea and watch a four-person AI office — PM, Researcher, Designer, Developer — debate it and deliver a plan.";
+  "Type a product idea. Watch four AI teammates debate it, then get a PRD, competitor scan, landing copy, and build plan — in about a minute.";
+const TWITTER_DESCRIPTION =
+  "Type a product idea. Watch four AI teammates debate it, then get a PRD, competitor scan, landing copy, and build plan.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.SITE_URL ?? "http://localhost:3000"),
@@ -22,7 +24,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: TITLE,
-    description: DESCRIPTION,
+    description: TWITTER_DESCRIPTION,
     images: ["/og-cover.png"],
   },
 };
