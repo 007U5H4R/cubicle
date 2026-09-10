@@ -3,6 +3,8 @@ import { useCallback, useState } from "react";
 import { Desk, type Role } from "./Desk";
 import { IdeaBox, type IdeaBoxError } from "./IdeaBox";
 import { openRunStream } from "@/lib/client/runStream";
+import { applyEvent, initRun, useRunStore } from "@/lib/client/runStore";
+import { deriveDesks } from "@/lib/client/deskState";
 
 const ROLES: Role[] = ["pm", "researcher", "designer", "developer"];
 
@@ -26,14 +28,16 @@ function errorFromResponse(status: number, body: unknown): IdeaBoxError {
 
 /**
  * Owns the "/" route: the idea box + the desk quad, and the in-place transition to a started run.
- * The desk quad never unmounts across that transition — only the idea-box region swaps for a
- * "started" placeholder (the real live-run UI is TKT-12), and the URL moves to /run/[id] via
- * history.pushState (not router.push, which would remount the tree).
+ * The desk quad never unmounts across that transition — the same keyed `<Desk key={role}>` elements
+ * stay in the same JSX position; only their props change, driven by the client run store
+ * (`applyEvent`/`deriveDesks`) once the SSE stream opens. Only the idea-box region swaps for the
+ * idea recap line — the full artifact-pack + transcript are later tickets.
  */
 export function Office() {
   const [idea, setIdea] = useState("");
   const [phase, setPhase] = useState<Phase>("idle");
   const [error, setError] = useState<IdeaBoxError | null>(null);
+  const snap = useRunStore();
 
   const handleSubmit = useCallback(() => {
     setError(null);
@@ -42,8 +46,12 @@ export function Office() {
       { idea },
       {
         onOpen(runId) {
+          initRun(runId);
           window.history.pushState(null, "", `/run/${runId}`);
           setPhase("started");
+        },
+        onEvent(e) {
+          applyEvent(e);
         },
         onError(status, body) {
           setPhase("idle");
@@ -53,14 +61,17 @@ export function Office() {
     );
   }, [idea]);
 
+  const desks = phase === "started" ? deriveDesks(snap, snap.live) : null;
+  const ideaRecap = snap.run?.idea || idea;
+
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-[var(--gutter)] py-12">
       <h1 className="text-3xl font-bold text-text">Your first team fits in a cubicle.</h1>
 
       <div className="transition-opacity duration-[240ms] ease-[var(--ease-in-out)]">
         {phase === "started" ? (
-          <div className="rounded-lg border border-border bg-surface p-4 text-sm text-text-muted">
-            Starting your office…
+          <div className="truncate rounded-lg border border-border bg-surface p-4 text-sm text-text-muted">
+            {ideaRecap}
           </div>
         ) : (
           <IdeaBox
@@ -74,9 +85,13 @@ export function Office() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {ROLES.map((role) => (
-          <Desk key={role} role={role} state="idle" />
-        ))}
+        {ROLES.map((role) =>
+          desks ? (
+            <Desk key={role} role={role} {...desks[role]} />
+          ) : (
+            <Desk key={role} role={role} state="idle" />
+          ),
+        )}
       </div>
     </main>
   );
