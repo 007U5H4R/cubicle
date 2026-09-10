@@ -100,6 +100,24 @@ function streamGateway(scripts: Partial<Record<ArtifactType, Attempt[]>>) {
   return { gateway: { chat, stream } as Gateway, calls };
 }
 
+/** Single-type streaming gateway that yields the given deltas then done, advancing a shared mutable
+ * clock by `tickMs` AFTER each delta so a test can drive the 400ms time-threshold flush branch. With
+ * `tickMs: 0` the clock is constant and only the 200-char branch can fire. */
+function cadenceGateway(type: ArtifactType, deltas: string[], doneUsage: Usage, clock: { t: number }, tickMs = 0): Gateway {
+  const stream = ((_kind: "artifact" | "grounded", system: string) => {
+    if (systemToType(system) !== type) throw new Error(`cadenceGateway only serves ${type}`);
+    return (async function* () {
+      for (const text of deltas) {
+        yield { type: "delta", text } as const;
+        clock.t += tickMs;
+      }
+      yield { type: "done", usage: doneUsage, sources: [] } as const;
+    })();
+  }) as Gateway["stream"];
+  const chat = (async () => { throw new Error("chat is not used by the deliver engine"); }) as Gateway["chat"];
+  return { chat, stream } as Gateway;
+}
+
 function sseDouble() {
   const events: { type: string; payload: unknown }[] = [];
   return { events, send: (type: string, payload: unknown) => events.push({ type, payload }), close: vi.fn() };
@@ -277,6 +295,51 @@ describe("deliverOne", () => {
     expect(state.artifacts).toHaveLength(1); // upsert updated the existing row, no duplicate.
     expect(rowFor(state, "plan")!.content_md).toBe("fresh"); // old partial content was overwritten.
     expect(rowFor(state, "plan")!.status).toBe("done");
+  });
+});
+
+describe("flush cadence (multi-flush reassembly is lossless and dup-free)", () => {
+  /** All artifact.delta payloads for `type`, concatenated in emission order. */
+  const streamedText = (events: { type: string; payload: unknown }[], type: ArtifactType) =>
+    events.filter((e) => e.type === "artifact.delta" && (e.payload as { type?: string }).type === type).map((e) => (e.payload as { text: string }).text).join("");
+
+  it("char threshold: many deltas cross 200 chars repeatedly → several flushes; content_md == deltas, streamed deltas reassemble it", async () => {
+    const { db, state } = makeDb();
+    const sse = sseDouble();
+    const clock = { t: 0 }; // constant clock → only the 200-char branch can fire
+    // 12 deltas of 50 chars = 600 chars total → the 200-char rule flushes at deltas 4, 8, 12.
+    const deltas = Array.from({ length: 12 }, (_, i) => "x".repeat(49) + String(i % 10));
+    const gateway = cadenceGateway("prd", deltas, u(120, 40), clock, 0);
+    const result = await deliverOne({ type: "prd", idea: "idea", transcript: [], deps: { db, gateway, sink: stubSink(), now: () => clock.t }, sse, runId: "r1", maxOutputTokens: 5000 });
+
+    expect(result.status).toBe("done");
+    const expected = deltas.join("");
+    // (a) persisted content_md equals every yielded delta concatenated — no loss, no duplication.
+    expect(rowFor(state, "prd")!.content_md).toBe(expected);
+    // (b) every streamed artifact.delta payload, concatenated, also equals content_md — the pending
+    // buffer resets so each chunk is streamed exactly once.
+    expect(streamedText(sse.events, "prd")).toBe(expected);
+    // More than one threshold-driven flush fired (not just prefix + final): ≥ 3 delta events.
+    const deltaEvents = sse.events.filter((e) => e.type === "artifact.delta").length;
+    expect(deltaEvents).toBeGreaterThanOrEqual(3);
+  });
+
+  it("time threshold: clock advances 500ms between small deltas → 400ms branch flushes repeatedly, still lossless", async () => {
+    const { db, state } = makeDb();
+    const sse = sseDouble();
+    const clock = { t: 0 };
+    // 6 small deltas (10 chars, never hitting 200) but +500ms between each → the 400ms branch fires.
+    const deltas = Array.from({ length: 6 }, (_, i) => `d${i}` + "-".repeat(8));
+    const gateway = cadenceGateway("copy", deltas, u(30, 10), clock, 500);
+    const result = await deliverOne({ type: "copy", idea: "idea", transcript: [], deps: { db, gateway, sink: stubSink(), now: () => clock.t }, sse, runId: "r1", maxOutputTokens: 5000 });
+
+    expect(result.status).toBe("done");
+    const expected = deltas.join("");
+    expect(rowFor(state, "copy")!.content_md).toBe(expected);
+    expect(streamedText(sse.events, "copy")).toBe(expected);
+    // Several time-driven flushes (each < 200 chars, so only the 400ms branch could have fired them).
+    const deltaEvents = sse.events.filter((e) => e.type === "artifact.delta").length;
+    expect(deltaEvents).toBeGreaterThanOrEqual(3);
   });
 });
 
