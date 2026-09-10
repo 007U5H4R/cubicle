@@ -1,6 +1,4 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { EventSink } from "@/lib/events";
 import type { DebateCfg } from "@/lib/engine/debate";
 import type { Envelope } from "@/lib/engine/envelope";
 import { loadRunState, type RunState } from "@/lib/engine/state";
@@ -9,90 +7,14 @@ import { ARTIFACT_TYPES, HEADINGS, type ArtifactType } from "@/lib/prompts/headi
 import { recordingGateway } from "./recorder";
 import { makeStubGateway } from "./stub-gateway";
 import { SAMPLE_FIXTURE } from "./fixture";
+import { makeDb, sseDouble, stubSink } from "./harness";
 
 // TSK-09.2 — the network-free full-run replay test. Drives runOne (debate → deliver → finalize) with
 // the stub gateway + an in-memory db double, proving the whole engine on every CI push with no spend,
 // and asserts resume-from-database parity. The stub IS the gateway, so the real @google/genai
 // transport is never constructed (TC-040); a fetch guard makes that failure loud.
-
-type Row = Record<string, unknown>;
-type Table = "runs" | "messages" | "artifacts";
-
-// Real column sets from supabase/migrations/0001_init.sql — insert/upsert/update reject any key
-// outside these (mirroring PostgREST's PGRST204), so the `to`-column regression is caught offline.
-const COLUMNS: Record<Table, ReadonlySet<string>> = {
-  runs: new Set(["id", "anon_session_id", "owner_user_id", "idea", "status", "created_at", "started_at", "finished_at", "stop_reason", "model_agent", "model_orchestrator", "tokens_in", "tokens_out", "cost_cents", "share_slug", "is_shared", "error"]),
-  messages: new Set(["id", "run_id", "seq", "from_role", "to_role", "act", "subject", "body", "reply_to", "hops", "brief", "created_at"]),
-  artifacts: new Set(["run_id", "type", "status", "content_md", "grounded", "sources", "tokens_in", "tokens_out", "created_at", "finished_at"]),
-};
-
-/**
- * In-memory Supabase double. Mirrors run.test.ts's writer double (column allowlist + PGRST204) and
- * EXTENDS its reader so loadRunState works: select() projects the requested columns, and eq() supports
- * .single(), .order(), and being awaited directly (a thenable that resolves to the filtered rows).
- */
-function makeDb(seed: { runs: Row[]; messages?: Row[]; artifacts?: Row[] }) {
-  const state = { runs: [...seed.runs], messages: [...(seed.messages ?? [])], artifacts: [...(seed.artifacts ?? [])] };
-  const badKey = (name: Table, patch: Row) => Object.keys(patch).find((k) => !COLUMNS[name].has(k));
-  const pgrst204 = (name: Table, col: string) => ({ error: { message: `Could not find the '${col}' column of '${name}' in the schema cache`, code: "PGRST204" } });
-
-  function from(name: Table) {
-    const rows = state[name];
-    const project = (row: Row, cols: string): Row => {
-      if (cols === "*") return { ...row };
-      const out: Row = {};
-      for (const key of cols.split(",").map((c) => c.trim())) out[key] = row[key];
-      return out;
-    };
-    return {
-      update(patch: Row) {
-        const bad = badKey(name, patch);
-        return {
-          eq(col: string, val: unknown) { if (bad) return Promise.resolve(pgrst204(name, bad)); const row = rows.find((r) => r[col] === val); if (row) Object.assign(row, patch); return Promise.resolve({ error: null }); },
-          match(criteria: Row) { if (bad) return Promise.resolve(pgrst204(name, bad)); const row = rows.find((r) => Object.entries(criteria).every(([k, v]) => r[k] === v)); if (row) Object.assign(row, patch); return Promise.resolve({ error: null }); },
-        };
-      },
-      insert(row: Row) {
-        const bad = badKey(name, row);
-        if (bad) return Promise.resolve(pgrst204(name, bad));
-        rows.push({ ...row });
-        return Promise.resolve({ error: null });
-      },
-      upsert(row: Row) {
-        const bad = badKey(name, row);
-        if (bad) return Promise.resolve(pgrst204(name, bad));
-        const existing = rows.find((r) => r.run_id === row.run_id && r.type === row.type);
-        if (existing) Object.assign(existing, row);
-        else rows.push({ ...row });
-        return Promise.resolve({ error: null });
-      },
-      select(cols = "*") {
-        return {
-          eq(col: string, val: unknown) {
-            const matches = () => rows.filter((r) => r[col] === val);
-            return {
-              single() { const r = rows.find((x) => x[col] === val); return Promise.resolve(r ? { data: project(r, cols), error: null } : { data: null, error: { message: "not found" } }); },
-              order(ocol: string, opts?: { ascending?: boolean }) {
-                const dir = opts?.ascending === false ? -1 : 1;
-                const sorted = [...matches()].sort((a, b) => (Number(a[ocol]) - Number(b[ocol])) * dir).map((r) => project(r, cols));
-                return Promise.resolve({ data: sorted, error: null });
-              },
-              then<T>(resolve: (v: { data: Row[]; error: null }) => T) { return Promise.resolve({ data: matches().map((r) => project(r, cols)), error: null }).then(resolve); },
-            };
-          },
-        };
-      },
-    };
-  }
-  return { db: { from } as unknown as SupabaseClient, state };
-}
-
-function sseDouble() {
-  const events: { type: string; payload: unknown }[] = [];
-  return { events, send: (type: string, payload: unknown) => events.push({ type, payload }), close: vi.fn() };
-}
-
-function stubSink(): EventSink { return { insert: vi.fn(async () => {}) }; }
+// (makeDb/sseDouble/stubSink live in ./harness — TKT-12 Dispatch A reused them for
+// scripts/gen-office-fixture.ts.)
 
 // Caps generous enough that the fixture's 6 messages + 4 artifacts never trip a stop guard. A
 // constant clock keeps every timestamp deterministic, keeps elapsed at 0 (no office steer, no wall
@@ -117,10 +39,10 @@ describe("replay: full run against the recorded fixture (no network, no spend)",
 
   function runFixture() {
     const { db, state } = makeDb({ runs: [{ id: "r1", idea: SAMPLE_FIXTURE.idea, anon_session_id: "s1", status: "queued", is_shared: false, share_slug: null }] });
-    const sse = sseDouble();
+    const sse = sseDouble(vi.fn);
     // The stub is injected as the whole gateway — defaultDeps() (which builds the real transport) is
     // never called, so no @google/genai client is constructed.
-    const deps = { db, gateway: makeStubGateway(SAMPLE_FIXTURE), sink: stubSink(), now: () => NOW };
+    const deps = { db, gateway: makeStubGateway(SAMPLE_FIXTURE), sink: stubSink(vi.fn), now: () => NOW };
     return { db, state, sse, deps };
   }
 
@@ -245,7 +167,7 @@ describe("replay: full run against the recorded fixture (no network, no spend)",
     // the "real" gateway, record a full run, rebuild the fixture, and replay THAT into a second run.
     const first = makeDb({ runs: [{ id: "r1", idea: SAMPLE_FIXTURE.idea, anon_session_id: "s1", status: "queued", is_shared: false, share_slug: null }] });
     const rec = recordingGateway(makeStubGateway(SAMPLE_FIXTURE));
-    await runOne("r1", sseDouble(), { db: first.db, gateway: rec.gateway, sink: stubSink(), now: () => NOW }, DEBATE_CFG, DELIVER_CFG);
+    await runOne("r1", sseDouble(vi.fn), { db: first.db, gateway: rec.gateway, sink: stubSink(vi.fn), now: () => NOW }, DEBATE_CFG, DELIVER_CFG);
 
     const captured = rec.build(SAMPLE_FIXTURE.idea);
     expect(captured.orchestrator).toEqual(SAMPLE_FIXTURE.orchestrator);
@@ -253,7 +175,7 @@ describe("replay: full run against the recorded fixture (no network, no spend)",
 
     // Replay the captured fixture — it must drive an identical run (same 6 messages, 4 done artifacts).
     const second = makeDb({ runs: [{ id: "r1", idea: captured.idea, anon_session_id: "s1", status: "queued", is_shared: false, share_slug: null }] });
-    await runOne("r1", sseDouble(), { db: second.db, gateway: makeStubGateway(captured), sink: stubSink(), now: () => NOW }, DEBATE_CFG, DELIVER_CFG);
+    await runOne("r1", sseDouble(vi.fn), { db: second.db, gateway: makeStubGateway(captured), sink: stubSink(vi.fn), now: () => NOW }, DEBATE_CFG, DELIVER_CFG);
     expect(second.state.messages).toHaveLength(6);
     expect(second.state.runs[0]).toMatchObject({ status: "complete", stop_reason: "done" });
     for (const type of ARTIFACT_TYPES) expect(second.state.artifacts.find((a) => a.type === type)?.status).toBe("done");
