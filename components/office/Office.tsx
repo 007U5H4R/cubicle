@@ -3,6 +3,8 @@ import { useCallback, useState } from "react";
 import { Desk, type Role } from "./Desk";
 import { IdeaBox, type IdeaBoxError } from "./IdeaBox";
 import { MessageTravel } from "./MessageTravel";
+import { QueueCard } from "./QueueCard";
+import { RunErrorBanner } from "./RunErrorBanner";
 import { openRunStream } from "@/lib/client/runStream";
 import { applyEvent, initRun, useRunStore } from "@/lib/client/runStore";
 import { deriveDesks } from "@/lib/client/deskState";
@@ -87,13 +89,26 @@ export function Office() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {ROLES.map((role) =>
-          desks ? (
-            <Desk key={role} role={role} {...desks[role]} />
-          ) : (
-            <Desk key={role} role={role} state="idle" />
-          ),
+      {phase === "started" && snap.terminal && snap.run?.status === "failed" && <RunErrorBanner />}
+
+      <div className="relative">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {ROLES.map((role) =>
+            desks ? (
+              <Desk key={role} role={role} {...desks[role]} />
+            ) : (
+              <Desk key={role} role={role} state="idle" />
+            ),
+          )}
+        </div>
+
+        {snap.queue && (
+          <div
+            className="absolute inset-0 z-10 flex items-center justify-center rounded-lg p-4"
+            style={{ backgroundColor: "color-mix(in oklch, var(--neutral-950) 60%, transparent)" }}
+          >
+            <QueueCard queue={snap.queue} onTryAgain={handleSubmit} />
+          </div>
         )}
       </div>
 
