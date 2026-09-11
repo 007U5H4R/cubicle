@@ -255,6 +255,39 @@ code, .mono {
   transition: opacity 160ms var(--ease-in-out);
 }
 
+/* ---- TKT-13 Dispatch B — objection shake on arrival (Design.md §3.7 pt 3, §4), CSS-only ---- */
+
+@keyframes desk-objection-shake {
+  0%, 100% { transform: translateX(0); }
+  16.6% { transform: translateX(-4px); }
+  33.3% { transform: translateX(4px); }
+  50% { transform: translateX(-4px); }
+  66.6% { transform: translateX(4px); }
+  83.3% { transform: translateX(-4px); }
+}
+
+.desk-objection-shake {
+  animation: desk-objection-shake 350ms var(--ease-shake) 1;
+}
+
+@keyframes desk-objection-flash {
+  0%, 100% { outline-color: transparent; }
+  50% { outline-color: var(--act-objection); }
+}
+
+.desk-objection-flash {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  animation: desk-objection-flash 200ms var(--ease-in-out) 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .desk-objection-shake {
+    animation: desk-objection-flash 200ms var(--ease-in-out) 1;
+    transform: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .desk-thinking-glow {
     animation: none;
