@@ -16,6 +16,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test
+      - run: pnpm check:outline
       - name: secret scan
         uses: gitleaks/gitleaks-action@v2
         env:

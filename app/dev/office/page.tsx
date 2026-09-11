@@ -10,6 +10,7 @@ import { Pack } from "@/components/pack/Pack";
 import { applyEvent, reset, useRunStore } from "@/lib/client/runStore";
 import { deriveDesks } from "@/lib/client/deskState";
 import { useIsMobile } from "@/lib/client/useIsMobile";
+import { useReducedMotion } from "@/lib/client/useReducedMotion";
 import type { RunStreamEvent } from "@/lib/client/runStream";
 import fixture from "@/tests/replay/fixtures/run-001.json";
 
@@ -32,6 +33,7 @@ const EVENTS = fixture as RunStreamEvent[];
 export default function DevOfficePage() {
   const snap = useRunStore();
   const isMobile = useIsMobile();
+  const reducedMotion = useReducedMotion();
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
   const idxRef = useRef(0);
@@ -170,7 +172,7 @@ export default function DevOfficePage() {
             className="absolute inset-0 z-10 flex items-center justify-center rounded-lg p-4"
             style={{ backgroundColor: "color-mix(in oklch, var(--neutral-950) 60%, transparent)" }}
           >
-            <QueueCard queue={snap.queue} onTryAgain={() => {}} />
+            <QueueCard queue={snap.queue} onTryAgain={() => {}} reduced={reducedMotion} />
           </div>
         )}
       </div>
@@ -178,11 +180,14 @@ export default function DevOfficePage() {
       <Pack />
 
       {isMobile ? (
-        <Sheet />
+        <Sheet reduced={reducedMotion} />
       ) : (
-        <TranscriptPanel className="h-[420px] min-h-0 rounded-lg border border-border bg-surface p-3" />
+        <TranscriptPanel
+          reduced={reducedMotion}
+          className="h-[420px] min-h-0 rounded-lg border border-border bg-surface p-3"
+        />
       )}
-      <MessageTravel />
+      <MessageTravel reduced={reducedMotion} />
     </main>
   );
 }

@@ -12,6 +12,7 @@ import { TranscriptPanel } from "@/components/transcript/TranscriptPanel";
 import { Sheet } from "@/components/transcript/Sheet";
 import { Pack } from "@/components/pack/Pack";
 import { useIsMobile } from "@/lib/client/useIsMobile";
+import { useReducedMotion } from "@/lib/client/useReducedMotion";
 
 const ROLES: Role[] = ["pm", "researcher", "designer", "developer"];
 
@@ -46,6 +47,7 @@ export function Office() {
   const [error, setError] = useState<IdeaBoxError | null>(null);
   const snap = useRunStore();
   const isMobile = useIsMobile();
+  const reducedMotion = useReducedMotion();
 
   const handleSubmit = useCallback(() => {
     setError(null);
@@ -110,7 +112,7 @@ export function Office() {
             className="absolute inset-0 z-10 flex items-center justify-center rounded-lg p-4"
             style={{ backgroundColor: "color-mix(in oklch, var(--neutral-950) 60%, transparent)" }}
           >
-            <QueueCard queue={snap.queue} onTryAgain={handleSubmit} />
+            <QueueCard queue={snap.queue} onTryAgain={handleSubmit} reduced={reducedMotion} />
           </div>
         )}
       </div>
@@ -122,11 +124,14 @@ export function Office() {
               deferred to TKT-16/Design Critique. */}
           <Pack />
           {isMobile ? (
-            <Sheet />
+            <Sheet reduced={reducedMotion} />
           ) : (
-            <TranscriptPanel className="h-[420px] min-h-0 rounded-lg border border-border bg-surface p-3" />
+            <TranscriptPanel
+              reduced={reducedMotion}
+              className="h-[420px] min-h-0 rounded-lg border border-border bg-surface p-3"
+            />
           )}
-          <MessageTravel />
+          <MessageTravel reduced={reducedMotion} />
         </>
       )}
     </main>
