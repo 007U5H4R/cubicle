@@ -2,6 +2,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Desk, type Role } from "@/components/office/Desk";
 import { MessageTravel } from "@/components/office/MessageTravel";
+import { QueueCard } from "@/components/office/QueueCard";
+import { RunErrorBanner } from "@/components/office/RunErrorBanner";
 import { TranscriptPanel } from "@/components/transcript/TranscriptPanel";
 import { Pack } from "@/components/pack/Pack";
 import { applyEvent, reset, useRunStore } from "@/lib/client/runStore";
@@ -74,6 +76,18 @@ export default function DevOfficePage() {
     });
   }
 
+  function injectQueued() {
+    setPlaying(false);
+    const nextSeq = snap.lastSeq + 1;
+    applyEvent({ run_id: "run-001", seq: nextSeq, type: "run.status", payload: { status: "queued", position: 3, eta_s: 20 } });
+  }
+
+  function injectFull() {
+    setPlaying(false);
+    const nextSeq = snap.lastSeq + 1;
+    applyEvent({ run_id: "run-001", seq: nextSeq, type: "run.status", payload: { status: "full" } });
+  }
+
   function injectPhase1Failure() {
     setPlaying(false);
     reset();
@@ -126,6 +140,12 @@ export default function DevOfficePage() {
         <button type="button" onClick={injectPhase1Failure} className="h-11 rounded-md border border-act-objection px-4 text-sm text-act-objection">
           Inject Phase-1 failure
         </button>
+        <button type="button" onClick={injectQueued} className="h-11 rounded-md border border-border px-4 text-sm">
+          Inject queued
+        </button>
+        <button type="button" onClick={injectFull} className="h-11 rounded-md border border-border px-4 text-sm">
+          Inject full
+        </button>
       </div>
 
       <p className="text-sm text-text-muted">
@@ -133,10 +153,23 @@ export default function DevOfficePage() {
         {currentEvent ? ` — next: ${currentEvent.type}` : " — fixture exhausted"}
       </p>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {ROLES.map((role) => (
-          <Desk key={role} role={role} {...desks[role]} onRetry={desks[role].retryable ? () => {} : undefined} />
-        ))}
+      {snap.terminal && snap.run?.status === "failed" && <RunErrorBanner />}
+
+      <div className="relative">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {ROLES.map((role) => (
+            <Desk key={role} role={role} {...desks[role]} onRetry={desks[role].retryable ? () => {} : undefined} />
+          ))}
+        </div>
+
+        {snap.queue && (
+          <div
+            className="absolute inset-0 z-10 flex items-center justify-center rounded-lg p-4"
+            style={{ backgroundColor: "color-mix(in oklch, var(--neutral-950) 60%, transparent)" }}
+          >
+            <QueueCard queue={snap.queue} onTryAgain={() => {}} />
+          </div>
+        )}
       </div>
 
       <Pack />

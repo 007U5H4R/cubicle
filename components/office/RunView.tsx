@@ -2,8 +2,11 @@
 import { useEffect, useState } from "react";
 import { Desk, type Role } from "./Desk";
 import { MessageTravel } from "./MessageTravel";
-import { useRunStore, initRun, startPolling } from "@/lib/client/runStore";
+import { QueueCard } from "./QueueCard";
+import { RunErrorBanner } from "./RunErrorBanner";
+import { applyEvent, useRunStore, initRun, startPolling } from "@/lib/client/runStore";
 import { deriveDesks } from "@/lib/client/deskState";
+import { openRunStream } from "@/lib/client/runStream";
 import type { ArtifactType } from "@/lib/prompts/headings";
 import { ARTIFACT_ROLE } from "@/lib/prompts/headings";
 import { TranscriptPanel } from "@/components/transcript/TranscriptPanel";
@@ -50,6 +53,23 @@ export function RunView({ id }: { id: string }) {
     }
   }
 
+  // A queue-full happens at slot-acquisition time before a run row exists, so a Try-again re-POSTs
+  // a fresh run with the same idea (the server owns allowance) — same path as Office's handleSubmit.
+  function handleTryAgain() {
+    openRunStream(
+      { idea: ideaRecap },
+      {
+        onOpen(runId) {
+          initRun(runId);
+          window.history.pushState(null, "", `/run/${runId}`);
+        },
+        onEvent(e) {
+          applyEvent(e);
+        },
+      },
+    );
+  }
+
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-[var(--gutter)] py-12 md:flex-row md:items-start">
       <div className="flex w-full min-w-0 flex-col gap-8 md:max-w-3xl">
@@ -59,15 +79,28 @@ export function RunView({ id }: { id: string }) {
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {ROLES.map((role) => {
-            const derived = desks[role];
-            const onRetry =
-              derived.state === "failed" && derived.retryable && retrying !== role
-                ? () => handleRetry(role)
-                : undefined;
-            return <Desk key={role} role={role} {...derived} onRetry={onRetry} />;
-          })}
+        {snap.terminal && snap.run?.status === "failed" && <RunErrorBanner />}
+
+        <div className="relative">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {ROLES.map((role) => {
+              const derived = desks[role];
+              const onRetry =
+                derived.state === "failed" && derived.retryable && retrying !== role
+                  ? () => handleRetry(role)
+                  : undefined;
+              return <Desk key={role} role={role} {...derived} onRetry={onRetry} />;
+            })}
+          </div>
+
+          {snap.queue && (
+            <div
+              className="absolute inset-0 z-10 flex items-center justify-center rounded-lg p-4"
+              style={{ backgroundColor: "color-mix(in oklch, var(--neutral-950) 60%, transparent)" }}
+            >
+              <QueueCard queue={snap.queue} onTryAgain={handleTryAgain} />
+            </div>
+          )}
         </div>
 
         <Pack />
