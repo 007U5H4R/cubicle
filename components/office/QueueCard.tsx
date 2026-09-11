@@ -56,7 +56,7 @@ export function QueueCard({ queue, onTryAgain, reduced = false }: QueueCardProps
           <button
             type="button"
             onClick={onTryAgain}
-            className="mt-4 flex h-11 min-w-11 items-center justify-center rounded-md border border-border px-4 text-sm font-semibold text-text"
+            className="press mt-4 flex h-11 min-w-11 items-center justify-center rounded-md border border-border px-4 text-sm font-semibold text-text"
           >
             Try again
           </button>

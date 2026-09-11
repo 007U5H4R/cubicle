@@ -42,7 +42,7 @@ export function Pack() {
           type="button"
           disabled
           title="coming soon"
-          className="flex h-11 flex-1 items-center justify-center rounded-md border border-border text-sm text-text-muted disabled:opacity-60"
+          className="press flex h-11 flex-1 items-center justify-center rounded-md border border-border text-sm text-text-muted disabled:opacity-60"
         >
           Save
         </button>
@@ -50,7 +50,7 @@ export function Pack() {
           type="button"
           disabled
           title="coming soon"
-          className="flex h-11 flex-1 items-center justify-center rounded-md border border-border text-sm text-text-muted disabled:opacity-60"
+          className="press flex h-11 flex-1 items-center justify-center rounded-md border border-border text-sm text-text-muted disabled:opacity-60"
         >
           Share
         </button>

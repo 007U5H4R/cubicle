@@ -13,6 +13,7 @@ import { TranscriptPanel } from "@/components/transcript/TranscriptPanel";
 import { Sheet } from "@/components/transcript/Sheet";
 import { Pack } from "@/components/pack/Pack";
 import { useIsMobile } from "@/lib/client/useIsMobile";
+import { useReducedMotion } from "@/lib/client/useReducedMotion";
 
 const ROLES: Role[] = ["pm", "researcher", "designer", "developer"];
 
@@ -29,6 +30,7 @@ export function RunView({ id }: { id: string }) {
   const snap = useRunStore();
   const [retrying, setRetrying] = useState<Role | null>(null);
   const isMobile = useIsMobile();
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
     initRun(id);
@@ -101,7 +103,7 @@ export function RunView({ id }: { id: string }) {
               className="absolute inset-0 z-10 flex items-center justify-center rounded-lg p-4"
               style={{ backgroundColor: "color-mix(in oklch, var(--neutral-950) 60%, transparent)" }}
             >
-              <QueueCard queue={snap.queue} onTryAgain={handleTryAgain} />
+              <QueueCard queue={snap.queue} onTryAgain={handleTryAgain} reduced={reducedMotion} />
             </div>
           )}
         </div>
@@ -110,13 +112,14 @@ export function RunView({ id }: { id: string }) {
       </div>
 
       {isMobile ? (
-        <Sheet />
+        <Sheet reduced={reducedMotion} />
       ) : (
         <TranscriptPanel
+          reduced={reducedMotion}
           className="h-[420px] min-h-0 rounded-lg border border-border bg-surface p-3 md:sticky md:top-12 md:h-[calc(100vh-6rem)] md:flex-1"
         />
       )}
-      <MessageTravel />
+      <MessageTravel reduced={reducedMotion} />
     </main>
   );
 }

@@ -274,7 +274,7 @@ export function Desk({ role, state, badgeAct, preview, progress, onRetry }: Desk
               <button
                 type="button"
                 onClick={onRetry}
-                className="flex h-11 min-w-11 items-center justify-center rounded-md border border-act-objection px-3 text-xs font-semibold text-act-objection"
+                className="press flex h-11 min-w-11 items-center justify-center rounded-md border border-act-objection px-3 text-xs font-semibold text-act-objection"
               >
                 Retry
               </button>

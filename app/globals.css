@@ -330,3 +330,21 @@ code, .mono {
     transform: none;
   }
 }
+
+/* ---- TKT-17 — button press (Design.md §4: Start/Save/Share/Retry/Sheet-peek/Try-again) ---- */
+
+.press {
+  transition: transform 90ms var(--ease-out-expo);
+}
+
+.press:active {
+  transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .press,
+  .press:active {
+    transition: none;
+    transform: none;
+  }
+}

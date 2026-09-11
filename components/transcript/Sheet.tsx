@@ -99,7 +99,7 @@ export function Sheet({ reduced = false }: SheetProps) {
           aria-label={open ? "Close transcript" : "Open transcript"}
           aria-expanded={open}
           onClick={() => setOpen((prev) => !prev)}
-          className="flex h-[96px] min-h-[44px] w-full shrink-0 flex-col items-center justify-center gap-1"
+          className="press flex h-[96px] min-h-[44px] w-full shrink-0 flex-col items-center justify-center gap-1"
           style={{ paddingBottom: "max(0px, env(safe-area-inset-bottom))" }}
         >
           <span aria-hidden className="h-1 w-10 rounded-full bg-border" />
