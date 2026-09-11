@@ -21,7 +21,7 @@ export function Header({ status, auth }: { status?: ReactNode; auth?: ReactNode 
         {auth ?? (
           <button
             type="button"
-            className="rounded-[var(--radius-md)] px-3 py-2 text-[var(--text-sm)] text-[var(--text-muted)] hover:bg-[var(--surface-raised)] md:px-4"
+            className="flex h-11 min-w-11 items-center justify-center rounded-[var(--radius-md)] px-3 text-[var(--text-sm)] text-[var(--text-muted)] hover:bg-[var(--surface-raised)] md:h-auto md:px-4 md:py-2"
             aria-label="Sign in"
           >
             <span className="hidden md:inline">Sign in</span>

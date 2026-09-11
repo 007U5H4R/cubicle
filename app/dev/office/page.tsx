@@ -139,10 +139,10 @@ export default function DevOfficePage() {
         <button type="button" onClick={handleReset} className="h-11 rounded-md border border-border px-4 text-sm">
           Reset
         </button>
-        <button type="button" onClick={injectArtifactFailedCopy} className="h-11 rounded-md border border-act-objection px-4 text-sm text-act-objection">
+        <button type="button" onClick={injectArtifactFailedCopy} className="h-11 rounded-md border border-act-objection px-4 text-sm text-act-objection-text">
           Inject artifact.failed (copy)
         </button>
-        <button type="button" onClick={injectPhase1Failure} className="h-11 rounded-md border border-act-objection px-4 text-sm text-act-objection">
+        <button type="button" onClick={injectPhase1Failure} className="h-11 rounded-md border border-act-objection px-4 text-sm text-act-objection-text">
           Inject Phase-1 failure
         </button>
         <button type="button" onClick={injectQueued} className="h-11 rounded-md border border-border px-4 text-sm">

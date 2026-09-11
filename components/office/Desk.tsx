@@ -36,11 +36,21 @@ const ROLE_BORDER_40: Record<Role, string> = {
   developer: "border-role-developer/40",
 };
 
-const ROLE_TEXT: Record<Role, string> = {
+/** Glyph (icon) color — non-text, 3:1 is the applicable floor, so the raw role token is fine. */
+const ROLE_GLYPH: Record<Role, string> = {
   pm: "text-role-pm",
   researcher: "text-role-researcher",
   designer: "text-role-designer",
   developer: "text-role-developer",
+};
+
+/** DES-002: role-name/heading label color — TEXT, needs 4.5:1. Uses the text-safe `-text` token
+ * variants (app/globals.css) instead of the raw role token, which fails AA for researcher/designer. */
+const ROLE_TEXT: Record<Role, string> = {
+  pm: "text-role-pm-text",
+  researcher: "text-role-researcher-text",
+  designer: "text-role-designer-text",
+  developer: "text-role-developer-text",
 };
 
 const ROLE_VAR: Record<Role, string> = {
@@ -167,7 +177,7 @@ export function Desk({ role, state, badgeAct, preview, progress, onRetry }: Desk
             style={{ backgroundColor: roleVar, filter: "blur(6px)" }}
           />
         )}
-        <span className={`relative ${ROLE_TEXT[role]}`}>
+        <span className={`relative ${ROLE_GLYPH[role]}`}>
           <RoleGlyph role={role} />
         </span>
       </span>
@@ -274,7 +284,7 @@ export function Desk({ role, state, badgeAct, preview, progress, onRetry }: Desk
               <button
                 type="button"
                 onClick={onRetry}
-                className="press flex h-11 min-w-11 items-center justify-center rounded-md border border-act-objection px-3 text-xs font-semibold text-act-objection"
+                className="press flex h-11 min-w-11 items-center justify-center rounded-md border border-act-objection px-3 text-xs font-semibold text-act-objection-text"
               >
                 Retry
               </button>

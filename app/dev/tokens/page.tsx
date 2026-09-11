@@ -19,10 +19,18 @@ const PAIRS: Pair[] = [
   { id: "text-on-bg", label: "--text on --bg", fgVar: "--text", bgVar: "--bg", threshold: 7, kind: "text" },
   { id: "text-on-surface", label: "--text on --surface", fgVar: "--text", bgVar: "--surface", threshold: 7, kind: "text" },
   { id: "text-muted-on-surface", label: "--text-muted on --surface", fgVar: "--text-muted", bgVar: "--surface", threshold: 4.5, kind: "text" },
-  { id: "role-pm-on-surface", label: "--role-pm (text) on --surface", fgVar: "--role-pm", bgVar: "--surface", threshold: 4.5, kind: "text" },
-  { id: "role-researcher-on-surface", label: "--role-researcher (text) on --surface", fgVar: "--role-researcher", bgVar: "--surface", threshold: 4.5, kind: "text" },
-  { id: "role-designer-on-surface", label: "--role-designer (text) on --surface", fgVar: "--role-designer", bgVar: "--surface", threshold: 4.5, kind: "text" },
-  { id: "role-developer-on-surface", label: "--role-developer (text) on --surface", fgVar: "--role-developer", bgVar: "--surface", threshold: 4.5, kind: "text" },
+  // DES-002: role names/headings render with the `-text` token variants (app/globals.css), not the
+  // raw role token — the raw tokens stay below and are checked at the 3:1 non-text floor they actually
+  // need (icon glyphs, fills, borders).
+  { id: "role-pm-text-on-surface", label: "--role-pm-text (label) on --surface", fgVar: "--role-pm-text", bgVar: "--surface", threshold: 4.5, kind: "text" },
+  { id: "role-researcher-text-on-surface", label: "--role-researcher-text (label) on --surface", fgVar: "--role-researcher-text", bgVar: "--surface", threshold: 4.5, kind: "text" },
+  { id: "role-designer-text-on-surface", label: "--role-designer-text (label) on --surface", fgVar: "--role-designer-text", bgVar: "--surface", threshold: 4.5, kind: "text" },
+  { id: "role-developer-text-on-surface", label: "--role-developer-text (label) on --surface", fgVar: "--role-developer-text", bgVar: "--surface", threshold: 4.5, kind: "text" },
+  { id: "role-pm-on-surface", label: "--role-pm (glyph/fill) vs --surface", fgVar: "--role-pm", bgVar: "--surface", threshold: 3, kind: "fill" },
+  { id: "role-researcher-on-surface", label: "--role-researcher (glyph/fill) vs --surface", fgVar: "--role-researcher", bgVar: "--surface", threshold: 3, kind: "fill" },
+  { id: "role-designer-on-surface", label: "--role-designer (glyph/fill) vs --surface", fgVar: "--role-designer", bgVar: "--surface", threshold: 3, kind: "fill" },
+  { id: "role-developer-on-surface", label: "--role-developer (glyph/fill) vs --surface", fgVar: "--role-developer", bgVar: "--surface", threshold: 3, kind: "fill" },
+  { id: "act-objection-text-on-surface", label: "--act-objection-text (retry/error text) on --surface", fgVar: "--act-objection-text", bgVar: "--surface", threshold: 4.5, kind: "text" },
   { id: "act-propose-fill", label: "--act-propose (chip fill) vs --surface", fgVar: "--act-propose", bgVar: "--surface", threshold: 3, kind: "fill" },
   { id: "act-question-fill", label: "--act-question (chip fill) vs --surface", fgVar: "--act-question", bgVar: "--surface", threshold: 3, kind: "fill" },
   { id: "act-objection-fill", label: "--act-objection (chip fill) vs --surface", fgVar: "--act-objection", bgVar: "--surface", threshold: 3, kind: "fill" },
