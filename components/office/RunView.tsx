@@ -10,7 +10,9 @@ import { openRunStream } from "@/lib/client/runStream";
 import type { ArtifactType } from "@/lib/prompts/headings";
 import { ARTIFACT_ROLE } from "@/lib/prompts/headings";
 import { TranscriptPanel } from "@/components/transcript/TranscriptPanel";
+import { Sheet } from "@/components/transcript/Sheet";
 import { Pack } from "@/components/pack/Pack";
+import { useIsMobile } from "@/lib/client/useIsMobile";
 
 const ROLES: Role[] = ["pm", "researcher", "designer", "developer"];
 
@@ -26,6 +28,7 @@ function artifactOf(role: Role): ArtifactType {
 export function RunView({ id }: { id: string }) {
   const snap = useRunStore();
   const [retrying, setRetrying] = useState<Role | null>(null);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     initRun(id);
@@ -106,9 +109,13 @@ export function RunView({ id }: { id: string }) {
         <Pack />
       </div>
 
-      <TranscriptPanel
-        className="h-[420px] min-h-0 rounded-lg border border-border bg-surface p-3 md:sticky md:top-12 md:h-[calc(100vh-6rem)] md:flex-1"
-      />
+      {isMobile ? (
+        <Sheet />
+      ) : (
+        <TranscriptPanel
+          className="h-[420px] min-h-0 rounded-lg border border-border bg-surface p-3 md:sticky md:top-12 md:h-[calc(100vh-6rem)] md:flex-1"
+        />
+      )}
       <MessageTravel />
     </main>
   );
