@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Desk, type Role } from "@/components/office/Desk";
 import { MessageTravel } from "@/components/office/MessageTravel";
 import { TranscriptPanel } from "@/components/transcript/TranscriptPanel";
+import { Pack } from "@/components/pack/Pack";
 import { applyEvent, reset, useRunStore } from "@/lib/client/runStore";
 import { deriveDesks } from "@/lib/client/deskState";
 import type { RunStreamEvent } from "@/lib/client/runStream";
@@ -137,6 +138,8 @@ export default function DevOfficePage() {
           <Desk key={role} role={role} {...desks[role]} onRetry={desks[role].retryable ? () => {} : undefined} />
         ))}
       </div>
+
+      <Pack />
 
       <TranscriptPanel className="h-[420px] min-h-0 rounded-lg border border-border bg-surface p-3" />
       <MessageTravel />

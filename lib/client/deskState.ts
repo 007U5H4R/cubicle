@@ -1,6 +1,7 @@
 import type { DeskStateName, Role } from "@/components/office/Desk";
 import type { Act } from "@/lib/engine/envelope";
-import { ARTIFACT_ROLE, HEADINGS, type ArtifactType } from "@/lib/prompts/headings";
+import { ARTIFACT_ROLE, type ArtifactType } from "@/lib/prompts/headings";
+import { artifactProgress } from "./artifactProgress";
 import type { RunSnapshot } from "./runStore";
 
 // TKT-12 Dispatch A — pure derivation of each role's desk state from a `RunSnapshot` (technical-plan
@@ -57,7 +58,8 @@ export function deriveDesks(snap: RunSnapshot, live: boolean): Record<Role, Desk
       continue;
     }
     if (artifact.status === "streaming") {
-      result[role] = { state: "writing", progress: { done: 0, total: HEADINGS[type].length } };
+      const { done, total } = artifactProgress(type, artifact.content_md);
+      result[role] = { state: "writing", progress: { done, total } };
       continue;
     }
     const badgeAct = waitingBadge(snap, role);
