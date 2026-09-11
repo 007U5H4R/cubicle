@@ -1,12 +1,12 @@
 "use client";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Desk, type Role } from "./Desk";
 import { IdeaBox, type IdeaBoxError } from "./IdeaBox";
 import { MessageTravel } from "./MessageTravel";
 import { QueueCard } from "./QueueCard";
 import { RunErrorBanner } from "./RunErrorBanner";
 import { openRunStream } from "@/lib/client/runStream";
-import { applyEvent, initRun, useRunStore } from "@/lib/client/runStore";
+import { applyEvent, initRun, reset, useRunStore } from "@/lib/client/runStore";
 import { deriveDesks } from "@/lib/client/deskState";
 import { TranscriptPanel } from "@/components/transcript/TranscriptPanel";
 import { Sheet } from "@/components/transcript/Sheet";
@@ -70,6 +70,24 @@ export function Office() {
       },
     );
   }, [idea]);
+
+  // CR-002: `handleSubmit` moves the URL to `/run/[id]` via a raw `pushState` (no real Next.js
+  // navigation, so this component never unmounts). Back-navigating returns the URL to `/` via
+  // `popstate` with no corresponding React update, leaving this component's local `phase` and the
+  // module-singleton run store stale (e.g. the header's RunStatusPill keeps showing the finished
+  // run). Only reset once the run has reached a terminal state — never touch an in-progress run,
+  // which would violate the TKT-11 quad-continuity invariant.
+  useEffect(() => {
+    function onPopState() {
+      if (window.location.pathname === "/" && snap.terminal) {
+        reset();
+        setPhase("idle");
+        setError(null);
+      }
+    }
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [snap.terminal]);
 
   const desks = phase === "started" ? deriveDesks(snap, snap.live) : null;
   const ideaRecap = snap.run?.idea || idea;

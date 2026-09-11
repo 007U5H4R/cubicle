@@ -90,9 +90,13 @@ export async function runOne(runId: string, sse: RunSse, deps: RunDeps = default
     await finalizeDeliver({ deps, sse, runId, anonSessionId, startedAt, stopReason: outcome.stop_reason, debateTokens: outcome.usage, deliver });
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
+    // SEC-002: the raw error may carry internal details (stack fragments, upstream error text) —
+    // log it server-side only and send a fixed generic string to the client (mirrors
+    // finalize.ts's failed-path SSE, which never sends raw error text either).
+    console.error(`runOne(${runId}) failed at phase=${phase}:`, e);
     await db.from("runs").update({ status: "failed", error: message }).eq("id", runId);
     await track(sink, "run_failed", { phase, reason: "model_error" }, { anonSessionId, runId });
-    sse.send("run.error", { phase, reason: "model_error", message });
+    sse.send("run.error", { phase, reason: "model_error", message: "Something went wrong running this desk." });
   } finally {
     sse.close();
   }

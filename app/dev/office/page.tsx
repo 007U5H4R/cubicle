@@ -71,7 +71,15 @@ export default function DevOfficePage() {
 
   function injectArtifactFailedCopy() {
     setPlaying(false);
-    const nextSeq = snap.lastSeq + 1;
+    let nextSeq = snap.lastSeq + 1;
+    // QA-001 scar: applyEvent's run.error handler only flips `run.status` when a `run` already
+    // exists in the snapshot (lib/client/runStore.ts) — injecting before any Step (snap.run still
+    // null) left the run.error a no-op (no banner, no terminal `run` state). Seed a minimal running
+    // run first so the injection is visible regardless of Step order.
+    if (!snap.run) {
+      applyEvent({ run_id: "run-001", seq: nextSeq, type: "run.status", payload: { status: "running", phase: "deliver" } });
+      nextSeq += 1;
+    }
     applyEvent({ run_id: "run-001", seq: nextSeq, type: "artifact.failed", payload: { type: "copy" } });
     applyEvent({
       run_id: "run-001",

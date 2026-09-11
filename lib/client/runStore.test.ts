@@ -115,6 +115,34 @@ describe("applyEvent", () => {
     applyEvent(evt(1, "run.status", { status: "full" }));
     expect(getSnapshot().queue).toEqual({ kind: "full" });
   });
+
+  // QA-001 scar (app/dev/office/page.tsx's injectArtifactFailedCopy no-op before any Step): on a
+  // fresh store (snap.run still null, e.g. no run.status applied yet), artifact.failed and run.error
+  // must not throw. run.error's `run` stays null (it only mutates an existing run object) — terminal
+  // and failedPhase still flip, but nothing downstream can read run.status === "failed" off a null
+  // run, so no run-level UI (e.g. RunErrorBanner) can render. The dev page works around this by
+  // seeding a run.status event first when snap.run is null — asserted here too.
+  it("artifact.failed + run.error on a fresh store (no run seeded) doesn't throw and stays sane", () => {
+    expect(getSnapshot().run).toBeNull();
+    expect(() => {
+      applyEvent(evt(1, "artifact.failed", { type: "copy" }));
+      applyEvent(evt(2, "run.error", { phase: "deliver", reason: "model_error" }));
+    }).not.toThrow();
+    const snap = getSnapshot();
+    expect(snap.artifacts.copy.status).toBe("failed");
+    expect(snap.terminal).toBe(true);
+    expect(snap.failedPhase).toBe("deliver");
+    expect(snap.run).toBeNull(); // no run object to update -> stays null, confirming the no-op
+  });
+
+  it("seeding run.status first (the dev-page fix) makes the same injection visible as a failed run", () => {
+    applyEvent(evt(1, "run.status", { status: "running", phase: "deliver" }));
+    applyEvent(evt(2, "artifact.failed", { type: "copy" }));
+    applyEvent(evt(3, "run.error", { phase: "deliver", reason: "model_error" }));
+    const snap = getSnapshot();
+    expect(snap.run?.status).toBe("failed");
+    expect(snap.terminal).toBe(true);
+  });
 });
 
 describe("hydrate", () => {

@@ -49,12 +49,17 @@ export function deriveDesks(snap: RunSnapshot, live: boolean): Record<Role, Desk
       result[role] = { state: "failed", retryable: true };
       continue;
     }
-    if (snap.terminal && snap.run?.status === "failed" && snap.failedPhase === "debate") {
-      result[role] = { state: "failed", retryable: false };
-      continue;
-    }
+    // CR-001: a `done` artifact always renders done, even under a failed run — hydrate() infers
+    // failedPhase as "debate" whenever no artifact is marked `failed` (lib/client/runStore.ts
+    // hydrate), which is wrong for a run-level failure during deliver that struck after some
+    // artifacts already completed. Checked ABOVE the blanket debate-phase fail guard below so those
+    // completed artifacts don't get hidden as unretryable failures.
     if (artifact.status === "done") {
       result[role] = { state: "done" };
+      continue;
+    }
+    if (snap.terminal && snap.run?.status === "failed" && snap.failedPhase === "debate") {
+      result[role] = { state: "failed", retryable: false };
       continue;
     }
     if (artifact.status === "streaming") {

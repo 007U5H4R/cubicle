@@ -146,6 +146,29 @@ describe("deriveDesks", () => {
     }
   });
 
+  it("CR-001: terminal-failed + failedPhase debate but one artifact done -> that desk stays done, not failed", () => {
+    // Regression for the hydrate()-inferred-failedPhase bug: a run that failed during deliver AFTER
+    // some artifacts completed (none individually marked `failed`) has hydrate() infer
+    // failedPhase="debate" (no artifact is `failed`), which must not hide the done artifact as an
+    // unretryable failure.
+    const snap = snapshot({
+      terminal: true,
+      run: { id: RUN_ID, idea: "i", status: "failed", stop_reason: "model_error", started_at: null, finished_at: null, is_shared: false, share_slug: null, owner: false },
+      failedPhase: "debate",
+      artifacts: {
+        prd: { status: "done", content_md: "x", grounded: false, sources: [] },
+        scan: { status: "pending", content_md: "", grounded: false, sources: [] },
+        copy: { status: "pending", content_md: "", grounded: false, sources: [] },
+        plan: { status: "pending", content_md: "", grounded: false, sources: [] },
+      },
+    });
+    const desks = deriveDesks(snap, false);
+    expect(desks.pm).toEqual({ state: "done" });
+    expect(desks.researcher).toEqual({ state: "failed", retryable: false });
+    expect(desks.designer).toEqual({ state: "failed", retryable: false });
+    expect(desks.developer).toEqual({ state: "failed", retryable: false });
+  });
+
   it("live:false on a completed run -> all done (no lingering speaking/thinking)", () => {
     const snap = snapshot({
       live: false,
