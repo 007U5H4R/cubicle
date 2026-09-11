@@ -21,6 +21,15 @@ const PEEK_PX = 96;
 const OPEN_VH = 0.8;
 const springSheet = { type: "spring" as const, stiffness: 300, damping: 30, mass: 0.9 };
 
+/** The sheet's `y` translation while closed: the sheet is `sheetHeight` tall (80vh), pinned to
+ * `bottom-0`, so translating it down by anything less than its full height leaves that much of it
+ * showing above the viewport bottom. To show exactly `PEEK_PX` of peek, translate down by
+ * `sheetHeight - PEEK_PX` — NOT the full `sheetHeight` (that would push the peek bar off-screen
+ * too). Pure so the snap targets are unit-testable without jsdom layout. */
+export function closedY(sheetHeight: number, peekPx: number = PEEK_PX): number {
+  return Math.max(0, sheetHeight - peekPx);
+}
+
 export function Sheet({ reduced = false }: SheetProps) {
   const snap = useRunStore();
   const messageCount = snap.messages.filter((m) => m.from_role !== "office").length;
@@ -28,16 +37,17 @@ export function Sheet({ reduced = false }: SheetProps) {
   const y = useMotionValue(0);
 
   const openHeight = typeof window !== "undefined" ? window.innerHeight * OPEN_VH : 0;
+  const closedHeight = closedY(openHeight);
 
   useEffect(() => {
-    const target = open ? 0 : openHeight;
+    const target = open ? 0 : closedHeight;
     if (reduced) {
       y.set(target);
     } else {
       const controls = animate(y, target, springSheet);
       return () => controls.stop();
     }
-  }, [open, openHeight, reduced, y]);
+  }, [open, closedHeight, reduced, y]);
 
   useEffect(() => {
     if (!open) return;
@@ -79,7 +89,7 @@ export function Sheet({ reduced = false }: SheetProps) {
         className="fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-lg border-t border-border bg-surface shadow-lg"
         style={{ height: `${OPEN_VH * 100}vh`, y }}
         drag="y"
-        dragConstraints={{ top: 0, bottom: openHeight }}
+        dragConstraints={{ top: 0, bottom: closedHeight }}
         dragElastic={0.1}
         onDragEnd={handleDragEnd}
       >

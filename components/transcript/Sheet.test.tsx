@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import { Sheet } from "./Sheet";
+import { Sheet, closedY } from "./Sheet";
 import { applyEvent, reset } from "@/lib/client/runStore";
 import type { Envelope } from "@/lib/engine/envelope";
 
@@ -49,6 +49,25 @@ function seedMessage(overrides: Partial<Envelope> & Pick<Envelope, "id" | "seq">
   };
   applyEvent({ run_id: "run-test", seq: envelope.seq, type: "message", payload: envelope });
 }
+
+describe("closedY", () => {
+  it("leaves exactly `peekPx` visible: translates down by sheetHeight - peekPx, not the full sheetHeight", () => {
+    // Sheet is 80vh tall, pinned bottom-0. A closed-state y equal to the full sheetHeight would
+    // push the peek bar off-screen too — the bug this fix corrects. The correct target leaves
+    // exactly 96px of the sheet (the peek bar) above the viewport bottom.
+    const sheetHeight = 800; // e.g. 1000px viewport * 0.8
+    expect(closedY(sheetHeight)).toBe(sheetHeight - 96);
+    expect(closedY(sheetHeight)).not.toBe(sheetHeight);
+  });
+
+  it("respects a custom peek height", () => {
+    expect(closedY(800, 120)).toBe(680);
+  });
+
+  it("never goes negative for a sheet shorter than the peek", () => {
+    expect(closedY(50)).toBe(0);
+  });
+});
 
 describe("Sheet", () => {
   it("shows the peek bar labeled Transcript (N) from the store's message count", () => {
