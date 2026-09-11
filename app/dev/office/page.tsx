@@ -5,9 +5,11 @@ import { MessageTravel } from "@/components/office/MessageTravel";
 import { QueueCard } from "@/components/office/QueueCard";
 import { RunErrorBanner } from "@/components/office/RunErrorBanner";
 import { TranscriptPanel } from "@/components/transcript/TranscriptPanel";
+import { Sheet } from "@/components/transcript/Sheet";
 import { Pack } from "@/components/pack/Pack";
 import { applyEvent, reset, useRunStore } from "@/lib/client/runStore";
 import { deriveDesks } from "@/lib/client/deskState";
+import { useIsMobile } from "@/lib/client/useIsMobile";
 import type { RunStreamEvent } from "@/lib/client/runStream";
 import fixture from "@/tests/replay/fixtures/run-001.json";
 
@@ -29,6 +31,7 @@ const EVENTS = fixture as RunStreamEvent[];
  */
 export default function DevOfficePage() {
   const snap = useRunStore();
+  const isMobile = useIsMobile();
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
   const idxRef = useRef(0);
@@ -174,7 +177,11 @@ export default function DevOfficePage() {
 
       <Pack />
 
-      <TranscriptPanel className="h-[420px] min-h-0 rounded-lg border border-border bg-surface p-3" />
+      {isMobile ? (
+        <Sheet />
+      ) : (
+        <TranscriptPanel className="h-[420px] min-h-0 rounded-lg border border-border bg-surface p-3" />
+      )}
       <MessageTravel />
     </main>
   );

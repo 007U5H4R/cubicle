@@ -9,7 +9,9 @@ import { openRunStream } from "@/lib/client/runStream";
 import { applyEvent, initRun, useRunStore } from "@/lib/client/runStore";
 import { deriveDesks } from "@/lib/client/deskState";
 import { TranscriptPanel } from "@/components/transcript/TranscriptPanel";
+import { Sheet } from "@/components/transcript/Sheet";
 import { Pack } from "@/components/pack/Pack";
+import { useIsMobile } from "@/lib/client/useIsMobile";
 
 const ROLES: Role[] = ["pm", "researcher", "designer", "developer"];
 
@@ -43,6 +45,7 @@ export function Office() {
   const [phase, setPhase] = useState<Phase>("idle");
   const [error, setError] = useState<IdeaBoxError | null>(null);
   const snap = useRunStore();
+  const isMobile = useIsMobile();
 
   const handleSubmit = useCallback(() => {
     setError(null);
@@ -118,7 +121,11 @@ export function Office() {
               RunView's; full parity here would risk the quad-continuity invariant above and is
               deferred to TKT-16/Design Critique. */}
           <Pack />
-          <TranscriptPanel className="h-[420px] min-h-0 rounded-lg border border-border bg-surface p-3" />
+          {isMobile ? (
+            <Sheet />
+          ) : (
+            <TranscriptPanel className="h-[420px] min-h-0 rounded-lg border border-border bg-surface p-3" />
+          )}
           <MessageTravel />
         </>
       )}
