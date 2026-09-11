@@ -7,6 +7,7 @@ import { openRunStream } from "@/lib/client/runStream";
 import { applyEvent, initRun, useRunStore } from "@/lib/client/runStore";
 import { deriveDesks } from "@/lib/client/deskState";
 import { TranscriptPanel } from "@/components/transcript/TranscriptPanel";
+import { Pack } from "@/components/pack/Pack";
 
 const ROLES: Role[] = ["pm", "researcher", "designer", "developer"];
 
@@ -101,6 +102,7 @@ export function Office() {
           {/* Single-column stack under the quad (TKT-13 brief) — the two-column desktop layout is
               RunView's; full parity here would risk the quad-continuity invariant above and is
               deferred to TKT-16/Design Critique. */}
+          <Pack />
           <TranscriptPanel className="h-[420px] min-h-0 rounded-lg border border-border bg-surface p-3" />
           <MessageTravel />
         </>

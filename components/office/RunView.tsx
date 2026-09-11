@@ -7,6 +7,7 @@ import { deriveDesks } from "@/lib/client/deskState";
 import type { ArtifactType } from "@/lib/prompts/headings";
 import { ARTIFACT_ROLE } from "@/lib/prompts/headings";
 import { TranscriptPanel } from "@/components/transcript/TranscriptPanel";
+import { Pack } from "@/components/pack/Pack";
 
 const ROLES: Role[] = ["pm", "researcher", "designer", "developer"];
 
@@ -68,6 +69,8 @@ export function RunView({ id }: { id: string }) {
             return <Desk key={role} role={role} {...derived} onRetry={onRetry} />;
           })}
         </div>
+
+        <Pack />
       </div>
 
       <TranscriptPanel
