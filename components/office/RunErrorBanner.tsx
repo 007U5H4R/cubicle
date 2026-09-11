@@ -7,7 +7,7 @@ export function RunErrorBanner() {
   return (
     <div
       role="alert"
-      className="rounded-lg border border-act-objection bg-surface p-3 text-sm text-act-objection"
+      className="rounded-lg border border-act-objection bg-surface p-3 text-sm text-act-objection-text"
       style={{ backgroundColor: "color-mix(in oklch, var(--act-objection) 6%, var(--surface))" }}
     >
       Something went wrong with this run.

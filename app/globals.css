@@ -42,12 +42,27 @@
 
   /* on-role text: always neutral-0 on role-pm/researcher/developer, neutral-950 on role-designer (amber is light) */
 
+  /* DES-002: role-name TEXT (transcript "PM"/"Designer" etc. labels, desk headings) needs its own
+     text-safe variant per role — the fill/border/glyph tokens above stay unchanged (they only need
+     3:1, and are already fine there). Measured against --surface: role-pm and role-developer already
+     clear 4.5:1 unchanged; role-researcher was 4.41:1 (fails) and role-designer was 2.53:1 (fails). */
+  --role-pm-text:         var(--role-pm);              /* 5.72:1 on white — unchanged */
+  --role-researcher-text: oklch(48% 0.12 195);          /* 5.83:1 on white (was 4.41:1) */
+  --role-designer-text:   oklch(52% 0.14 75);           /* 5.64:1 on white (was 2.53:1) */
+  --role-developer-text:  var(--role-developer);        /* 7.08:1 on white — unchanged */
+
   /* ---- The five acts (message color, never used alone — always paired with an icon + label) ---- */
   --act-propose:   oklch(55% 0.06 255);     /* quiet slate-indigo: a position on the table */
-  --act-question:  oklch(68% 0.14 95);      /* gold: asks something, needs an answer */
+  /* DES-004: 60% L (was 68%) — the un-darkened value was 2.88:1 vs --surface, under the 3:1
+     non-text (fill) floor; dark mode was already fine unchanged (6.56:1). */
+  --act-question:  oklch(60% 0.13 95);      /* gold: asks something, needs an answer */
   --act-objection: oklch(56% 0.21 27);      /* high-chroma red — deliberately the loudest token in the system */
   --act-agree:     oklch(64% 0.15 148);     /* green: accepts */
   --act-done:      oklch(55% 0.015 264);    /* neutral: nothing more to add */
+
+  /* DES-002: act-objection used as TEXT (retry button, error banner) is 5.16:1 on white — fine
+     unchanged in light mode; only the dark-mode value (below) needed a text-safe bump. */
+  --act-objection-text: var(--act-objection);
 
   /* ---- Semantic state ---- */
   --state-success: var(--act-agree);
@@ -106,7 +121,8 @@
     --surface-raised: oklch(32% 0.013 264);
     --border: oklch(38% 0.012 264);
     --text: var(--neutral-50);
-    --text-muted: var(--neutral-400);
+    /* DES-002: --text-muted was 4.74:1 on --surface-raised (marginal) — nudged +4% L for headroom. */
+    --text-muted: oklch(74% 0.008 264);
     /* dark lift: +7% L on every role and act token (Design.md §2 note) */
     --role-pm: oklch(59% 0.18 264);
     --role-researcher: oklch(62% 0.12 195);
@@ -117,6 +133,16 @@
     --act-objection: oklch(63% 0.21 27);
     --act-agree: oklch(71% 0.15 148);
     --act-done: oklch(62% 0.015 264);
+
+    /* DES-002: role-name TEXT variants — the fill tokens above measured against --surface-raised
+       (the harder of the two dark surfaces): role-pm 2.99:1, role-researcher 3.77:1, role-developer
+       2.43:1 all failed 4.5:1; role-designer's 6.43:1 already cleared it, so it carries through unchanged. */
+    --role-pm-text:         oklch(80% 0.13 264);  /* 6.57:1 on surface-raised (was 2.99:1) */
+    --role-researcher-text: oklch(80% 0.09 195);  /* 7.04:1 on surface-raised (was 3.77:1) */
+    --role-designer-text:   var(--role-designer);  /* 6.43:1 on surface-raised — unchanged */
+    --role-developer-text:  oklch(82% 0.12 322);  /* 6.94:1 on surface-raised (was 2.43:1) */
+    /* act-objection TEXT (retry button, error banner): fill token was 3.27:1 on surface-raised. */
+    --act-objection-text: oklch(75% 0.16 27);     /* 5.22:1 on surface-raised (was 3.27:1) */
   }
 }
 
@@ -127,7 +153,7 @@
   --surface-raised: oklch(32% 0.013 264);
   --border: oklch(38% 0.012 264);
   --text: var(--neutral-50);
-  --text-muted: var(--neutral-400);
+  --text-muted: oklch(74% 0.008 264);
   --role-pm: oklch(59% 0.18 264);
   --role-researcher: oklch(62% 0.12 195);
   --role-designer: oklch(79% 0.15 75);
@@ -136,6 +162,11 @@
   --act-question: oklch(75% 0.14 95);
   --act-objection: oklch(63% 0.21 27);
   --act-agree: oklch(71% 0.15 148);
+  --role-pm-text: oklch(80% 0.13 264);
+  --role-researcher-text: oklch(80% 0.09 195);
+  --role-designer-text: var(--role-designer);
+  --role-developer-text: oklch(82% 0.12 322);
+  --act-objection-text: oklch(75% 0.16 27);
   --act-done: oklch(62% 0.015 264);
 }
 
@@ -165,11 +196,18 @@
   --color-role-designer: var(--role-designer);
   --color-role-developer: var(--role-developer);
 
+  /* DES-002: text-safe role-name variants (see :root / dark blocks above) */
+  --color-role-pm-text: var(--role-pm-text);
+  --color-role-researcher-text: var(--role-researcher-text);
+  --color-role-designer-text: var(--role-designer-text);
+  --color-role-developer-text: var(--role-developer-text);
+
   --color-act-propose: var(--act-propose);
   --color-act-question: var(--act-question);
   --color-act-objection: var(--act-objection);
   --color-act-agree: var(--act-agree);
   --color-act-done: var(--act-done);
+  --color-act-objection-text: var(--act-objection-text);
 
   --color-state-success: var(--state-success);
   --color-state-warning: var(--state-warning);
@@ -180,6 +218,17 @@
   --radius-md: var(--radius-md);
   --radius-lg: var(--radius-lg);
   --radius-full: var(--radius-full);
+
+  /* DES-001: wire the Design.md §2 fluid clamp scale into Tailwind's font-size
+     namespace so text-xs..text-3xl utilities resolve to the clamps instead of
+     Tailwind's built-in defaults. */
+  --text-xs: var(--text-xs);
+  --text-sm: var(--text-sm);
+  --text-base: var(--text-base);
+  --text-lg: var(--text-lg);
+  --text-xl: var(--text-xl);
+  --text-2xl: var(--text-2xl);
+  --text-3xl: var(--text-3xl);
 
   --font-manrope: var(--font-manrope);
   --font-inter: var(--font-inter);

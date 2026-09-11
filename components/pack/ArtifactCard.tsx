@@ -100,7 +100,7 @@ export function ArtifactCard({ type }: ArtifactCardProps) {
           onClick={handleCopy}
           aria-label={`Copy ${TITLE[type]}`}
           title={copied ? "Copied" : "Copy"}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-opacity hover:opacity-80"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md transition-opacity hover:opacity-80"
         >
           <CopyIcon />
         </button>

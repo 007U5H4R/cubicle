@@ -27,11 +27,21 @@ const ROLE_NAME: Record<Role, string> = {
   developer: "Developer",
 };
 
-const ROLE_TEXT: Record<Role, string> = {
+/** Glyph (icon) color — non-text, 3:1 is the applicable floor, so the raw role token is fine. */
+const ROLE_GLYPH: Record<Role, string> = {
   pm: "text-role-pm",
   researcher: "text-role-researcher",
   designer: "text-role-designer",
   developer: "text-role-developer",
+};
+
+/** DES-002: role-name label color — TEXT, needs 4.5:1. Uses the text-safe `-text` token variants
+ * (app/globals.css) instead of the raw role token, which fails AA for researcher/designer. */
+const ROLE_TEXT: Record<Role, string> = {
+  pm: "text-role-pm-text",
+  researcher: "text-role-researcher-text",
+  designer: "text-role-designer-text",
+  developer: "text-role-developer-text",
 };
 
 const NEAR_BOTTOM_PX = 40;
@@ -83,7 +93,7 @@ function TranscriptRow({ message, isFirstAppearance, reduced }: TranscriptRowPro
       className="flex flex-col gap-1 rounded-md px-3 py-2"
     >
       <div className="flex items-center gap-2">
-        <span className={ROLE_TEXT[message.from_role]}>
+        <span className={ROLE_GLYPH[message.from_role]}>
           <RoleGlyph role={message.from_role} />
         </span>
         <span className={`font-manrope text-sm font-semibold ${ROLE_TEXT[message.from_role]}`}>
