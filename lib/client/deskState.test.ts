@@ -101,6 +101,20 @@ describe("deriveDesks", () => {
     expect(desks.researcher).toMatchObject({ state: "done" });
   });
 
+  it("artifact streaming with 2 of 6 PRD headings in content_md -> progress.done = 2", () => {
+    const md = "## Problem\nprose\n\n## Who it is for\nmore prose still streaming";
+    const snap = snapshot({
+      artifacts: {
+        prd: { status: "streaming", content_md: md, grounded: false, sources: [] },
+        scan: { status: "pending", content_md: "", grounded: false, sources: [] },
+        copy: { status: "pending", content_md: "", grounded: false, sources: [] },
+        plan: { status: "pending", content_md: "", grounded: false, sources: [] },
+      },
+    });
+    const desks = deriveDesks(snap, true);
+    expect(desks.pm).toMatchObject({ state: "writing", progress: { done: 2, total: 6 } });
+  });
+
   it("terminal-failed + one artifact failed -> that desk failed retryable, others done", () => {
     const snap = snapshot({
       terminal: true,
